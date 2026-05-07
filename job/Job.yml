@@ -1,0 +1,17 @@
+resources:
+  jobs:
+    water_quality_pipeline_job:
+      name: water-quality-pipeline-job
+      trigger:
+        pause_status: UNPAUSED
+        periodic:
+          interval: 8
+          unit: DAYS
+      tasks:
+        - task_key: run_pipeline
+          notebook_task:
+            notebook_path: /Workspace/Brief_eau_69/water-quality-pipeline_ettayeb/Notebooks/run_pipeline
+            source: WORKSPACE
+      queue:
+        enabled: true
+      performance_target: PERFORMANCE_OPTIMIZED
