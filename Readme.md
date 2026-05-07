@@ -1,217 +1,341 @@
-# 💧 Water Quality Data Pipeline
+# 💧 Pipeline Data Engineering — Qualité de l’Eau Potable
 
-## 📌 Description
+## 📌 Présentation du projet
 
-Projet Data Engineering permettant de collecter, transformer et analyser les données de qualité de l’eau potable depuis l’API HubEau.
+Ce projet a pour objectif de construire un pipeline Data Engineering complet permettant :
 
-Le projet suit une architecture Medallion :
+- l’ingestion des données de qualité de l’eau potable depuis l’API Hub’Eau,
+- la transformation et le nettoyage des données,
+- la modélisation analytique en architecture Bronze / Silver / Gold,
+- l’automatisation du pipeline avec Databricks Jobs,
+- l’analyse des indicateurs de conformité de l’eau potable en France.
 
-- Bronze → données brutes
-- Silver → données nettoyées
-- Gold → données analytiques
+Le projet a été réalisé avec :
 
-Le pipeline est développé avec Databricks, PySpark et Delta Lake.
+- Apache Spark (PySpark)
+- Databricks
+- Delta Lake
+- GitHub
+- API Hub’Eau
 
 ---
 
 # 🏗️ Architecture du projet
 
 ```text
-API HubEau
+API Hub’Eau
      ↓
-Bronze Layer (Raw Data)
+Bronze Layer (raw ingestion)
      ↓
-Silver Layer (Cleaned Data)
+Silver Layer (clean & transformation)
      ↓
-Gold Layer (Analytics & KPIs)
+Gold Layer (modèle analytique + KPI)
+     ↓
+Dashboard / Analyse
+```
 
-⚙️ Stack Technique
-Python
-PySpark
-Databricks
-Delta Lake
-GitHub
-API HubEau
+---
 
-🌍 Source des données
+# 📂 Structure du repository
 
-Données provenant de l’API publique HubEau :
-
-https://hubeau.eaufrance.fr
-
-API utilisée :
-
-https://hubeau.eaufrance.fr/api/v1/qualite_eau_potable/resultats_dis
-
-🥉 Bronze Layer — Ingestion
-
-Le notebook Bronze permet :
-
-l’extraction des données depuis l’API HubEau
-la gestion de la pagination API
-le stockage brut des données
-l’écriture en format Delta
-
-Fonctionnalités :
-
-ingestion par pages
-limitation du nombre de pages
-sauvegarde par chunks
-gestion des erreurs API
-
-Table créée :
-
-water_catalog.bronze.water_quality
-
-🥈 Silver Layer — Transformation
-
-Le notebook Silver réalise le nettoyage et l’enrichissement des données.
-
-Transformations effectuées :
-
-suppression des colonnes inutiles
-suppression des lignes nulles
-correction des types
-conversion String → Double
-extraction des valeurs numériques
-traitement des valeurs comme :
-<=50 mg/L
-6,5
-enrichissement temporel
-
-Colonnes temporelles créées :
-
-annee_prelevement
-mois_prelevement
-trimestre_prelevement
-
-Gestion qualité :
-
-conformité
-limites qualité
-références qualité
-
-Table créée :
-
-water_catalog.silver.water_quality_clean
-
-🥇 Gold Layer — Modélisation Analytique
-
-Le notebook Gold construit un modèle analytique orienté BI et reporting.
-
-Dimensions
-dim_commune
-
-Informations géographiques :
-
-commune
-département
-distributeur
-UGE
-dim_parametre
-
-Informations analytiques :
-
-paramètre
-unité
-type paramètre
-dim_temps
-
-Dimension temporelle :
-
-date
-mois
-trimestre
-année
-dim_installation
-
-Informations réseau et installation.
-
-📊 Tables de faits
-
-fact_mesures
-
-Table centrale contenant :
-
-résultats d’analyses
-conformité
-seuils qualité
-références
-dates
-
-📈 KPIs et Agrégats
-
-Le projet calcule plusieurs indicateurs :
-
-taux de conformité
-nombre d’analyses
-communes les plus conformes
-communes les moins conformes
-analyses par département
-tendances temporelles
-paramètres critiques
-dépassements qualité
-
-Table KPI :
-
-water_catalog.gold.commune_kpi
-
-🚀 Orchestration Pipeline
-
-Le pipeline complet est orchestré avec :
-
-dbutils.notebook.run()
-
-Ordre d’exécution :
-
-Bronze ingestion
-Silver transformation
-Gold modelisation
-
-📂 Structure du projet
-
+```text
 water-quality-pipeline/
 │
 ├── notebooks/
-│   ├── bronze_ingestion
-│   ├── silver_transfo
-│   ├── gold_modelisation
-│   └── run_pipeline
+│   ├── 01_bronze_ingestion.py
+│   ├── 02_silver_transformation.py
+│   ├── 03_gold_modelisation.py
+│   └── 04_run_pipeline.py
 │
-├── screenshots/
+├── jobs/
+│   └── water_quality_job.yml
 │
 ├── README.md
-│
-└── requirements.txt
 
-▶️ Exécution
+```
 
-1. Lancer Bronze
-dbutils.notebook.run("bronze_ingestion", 0)
-2. Lancer Silver
-dbutils.notebook.run("silver_transfo", 0)
-3. Lancer Gold
-dbutils.notebook.run("gold_modelisation", 0)
-4. Pipeline complet
-dbutils.notebook.run("run_pipeline", 0)
+---
 
-📌 Fonctionnalités Data Engineering
+# 📥 Source des données
 
-Ce projet met en pratique :
+Les données proviennent de l’API publique Hub’Eau :
 
-ingestion API REST
-architecture Medallion
-Delta Lake
-PySpark transformations
-nettoyage de données
-gestion des types
-modélisation analytique
-orchestration pipeline
-Git/GitHub
-Databricks
+API :
+https://hubeau.eaufrance.fr/
 
-👨‍💻 Auteur
+Endpoint utilisé :
+
+```text
+/qualite_eau_potable/resultats_dis
+```
+
+Les données récupérées contiennent notamment :
+
+- les résultats d’analyses,
+- les paramètres chimiques,
+- les informations de conformité,
+- les communes,
+- les installations,
+- les réseaux de distribution,
+- les limites réglementaires.
+
+---
+
+# 🥉 Bronze Layer — Ingestion
+
+## 🎯 Objectif
+
+Récupérer les données brutes depuis l’API et les stocker dans Delta Lake.
+
+## ✅ Traitements réalisés
+
+- récupération paginée des données,
+- gestion des chunks,
+- sauvegarde des données brutes,
+- ajout de la date d’ingestion,
+- stockage dans Delta Table.
+
+## 📌 Table créée
+
+```text
+water_catalog.bronze.water_quality
+```
+
+---
+
+# 🥈 Silver Layer — Transformation
+
+## 🎯 Objectif
+
+Nettoyer et standardiser les données.
+
+## ✅ Transformations réalisées
+
+### Nettoyage des types
+
+- conversion string → double,
+- remplacement des virgules par des points,
+- suppression des caractères spéciaux (`<=`, `mg/L`, etc.).
+
+### Gestion des valeurs nulles
+
+- suppression des lignes critiques nulles,
+- contrôle qualité.
+
+### Standardisation
+
+- création des colonnes :
+  - `annee_prelevement`
+  - `mois_prelevement`
+  - `trimestre_prelevement`
+
+### Conversion des dates
+
+- conversion de `date_prelevement` en type `date`.
+
+### Enrichissement
+
+- création d’indicateurs :
+  - conformité,
+  - dépassement,
+  - ratios de qualité.
+
+## 📌 Table créée
+
+```text
+water_catalog.silver.water_quality_clean
+```
+
+---
+
+# 🥇 Gold Layer — Modélisation analytique
+
+## 🎯 Objectif
+
+Construire un modèle analytique optimisé pour l’analyse et le reporting.
+
+---
+
+# 📊 Modèle analytique
+
+## 📌 Dimensions
+
+### `dim_commune`
+
+Informations géographiques :
+
+- commune,
+- département,
+- distributeur,
+- UGE.
+
+### `dim_parametre`
+
+Informations sur les paramètres analysés :
+
+- code paramètre,
+- unité,
+- type,
+- libellé.
+
+### `dim_temps`
+
+Dimension temporelle :
+
+- date,
+- année,
+- mois,
+- trimestre.
+
+### `dim_installation`
+
+Informations techniques :
+
+- installation amont,
+- réseau,
+- distributeur.
+
+---
+
+## 📌 Table de faits
+
+### `fact_mesures`
+
+Contient les analyses d’eau :
+
+- résultats numériques,
+- conformité,
+- limites qualité,
+- références qualité,
+- dates,
+- communes,
+- paramètres.
+
+---
+
+# 📈 KPI & Agrégations
+
+## `commune_kpi`
+
+KPIs par commune :
+
+- nombre d’analyses,
+- taux de conformité,
+- moyenne des résultats,
+- nombre de dépassements,
+- score qualité.
+
+## Analyses possibles
+
+- évolution temporelle,
+- comparaison entre communes,
+- suivi des non-conformités,
+- tendances des contaminants,
+- qualité par département.
+
+---
+
+# ⚙️ Orchestration du pipeline
+
+Le pipeline est automatisé avec un Databricks Job.
+
+## 📌 Workflow
+
+```text
+01_bronze_ingestion
+        ↓
+02_silver_transformation
+        ↓
+03_gold_modelisation
+```
+
+---
+
+# 🚀 Exécution du pipeline
+
+## Notebook principal
+
+```python
+dbutils.notebook.run("/Workspace/Brief_eau_69/01_bronze_ingestion", 0)
+
+dbutils.notebook.run("/Workspace/Brief_eau_69/02_silver_transformation", 0)
+
+dbutils.notebook.run("/Workspace/Brief_eau_69/03_gold_modelisation", 0)
+```
+
+---
+
+# 📅 Job Databricks
+
+Le job exporté est disponible dans :
+
+```text
+/jobs/water_quality_job.yml
+```
+
+Il permet :
+
+- l’automatisation,
+- la planification,
+- l’exécution du pipeline complet.
+
+---
+
+# 🛠️ Technologies utilisées
+
+| Technologie | Utilisation |
+|---|---|
+| Databricks | Développement pipeline |
+| PySpark | Traitement Big Data |
+| Delta Lake | Stockage |
+| API Hub’Eau | Source des données |
+| GitHub | Versionning |
+| YAML | Configuration Job |
+
+---
+
+# 📌 Points techniques importants
+
+## Optimisations réalisées
+
+- pagination API,
+- ingestion par chunks,
+- Delta Lake,
+- partitionnement,
+- architecture medallion.
+
+## Gestion qualité des données
+
+- nettoyage avancé,
+- cast sécurisés,
+- suppression des nulls,
+- standardisation des formats.
+
+---
+
+# 📊 Exemple d’analyses possibles
+
+- communes les plus conformes,
+- paramètres les plus problématiques,
+- évolution mensuelle des contaminants,
+- départements avec le plus de non-conformités,
+- suivi réglementaire.
+
+---
+
+# 🔮 Améliorations futures
+
+- dashboard Power BI,
+- ingestion incrémentale,
+- streaming temps réel,
+- alertes automatiques,
+- monitoring pipeline,
+- CI/CD.
+
+---
+
+# 👨‍💻 Auteur
 
 Mohammed Nour Eddine ETTAYEB
 
-Projet réalisé dans le cadre d’un apprentissage Data Engineering.
+Projet Data Engineering — Databricks / PySpark / Delta Lake
